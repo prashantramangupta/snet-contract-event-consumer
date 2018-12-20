@@ -1,0 +1,21 @@
+{
+  "name": "eventtrackingpkg",
+  "version": "1.0.0",
+  "description": "event tracking on contracts",
+  "main": "contractevents.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "NNT Team",
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^1.6.4",
+    "sequelize": "^4.41.2",
+    "express": "^4.16.4",
+    "fs": "0.0.1-security",
+    "ipfs-api": "^26.1.2",
+    "singularitynet-platform-contracts": "https://github.com/singnet/platform-contracts/releases/download/v0.2.5/singularitynet-platform-contracts-0.2.5.tgz",
+    "singularitynet-token-contracts": "2.0.0",
+    "web3": "1.0.0-beta.37"
+  }
+}
