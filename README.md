@@ -1,5 +1,3 @@
-[![CircleCI](https://circleci.com/gh/singnet/snet-cli.svg?style=svg)](https://circleci.com/gh/singnet/snet-contract-event-consumer )	
-
 ## Getting Started  	
 #### SingularityNET Contract Event Consumer  	
 The consumer reads events from the registry and MPE contracts and records it on a persistent store which is used to build the index needed for other services.	
