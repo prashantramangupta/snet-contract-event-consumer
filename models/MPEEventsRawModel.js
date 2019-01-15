@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true
         },
         block_no: DataTypes.INTEGER,
+        event: DataTypes.TEXT,
+        transactionHash: DataTypes.STRING,
+        logIndex: DataTypes.INTEGER,        
         json_str: DataTypes.TEXT,
         processed: {
             type: DataTypes.TINYINT,
