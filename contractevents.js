@@ -1,75 +1,113 @@
 var sequelize = require('./models/index.js').sequelize,
+    https = require('https'),
     abiUtil = require("./utils.js"),
     Web3 = require('web3'),
     MPEEventsRaw = require('./models/index.js').MPEEventsRaw,
     RegistryEventsRaw = require('./models/index.js').RegistryEventsRaw,
     RFAIEventsRaw = require('./models/index.js').RFAIEventsRaw,
-    mpeClosed = false,
-    registryClosed = false;
-    rfaiClosed = false;
+    mpeClosed = true,
+    registryClosed = true;
+    rfaiClosed = true;
 
-function close(web3, isRegistry, isMPE, isRFAI) {
+function close(web3, isRegistry, isMPE, isRFAI){
     if (isRegistry) {
-        console.log("closing for Registry.");
-        registryClosed = true;
-    }
+            console.log("closing for registry..");
+            registryClosed = true;
+        }
     if (isMPE) {
-        console.log("closing for MPE.");
+        console.log("closing for MPE..");
         mpeClosed = true;
     }
     if (isRFAI) {
-        console.log("Closing for RFAI.");
+        console.log("closing for RFAI..");
         rfaiClosed = true;
     }
-
     if (registryClosed && mpeClosed && rfaiClosed) {
-        console.log("closing..");
-        sequelize.close().catch(err => console.error(err))
+        console.log("closing all..");
         web3.currentProvider.connection.close();
-        mpeClosed = false;
-        registryClosed = false;
-        rfaiClosed = false;
     }
 }
 
-function main() {
+async function main() {
     var netId = process.argv.slice(2)[0]
-    var web3Provider = require('./config.js').NETWORKS[netId]['infura_ws'];
-    console.log("main::netId:", netId, "|web3Provider:", web3Provider)
-    var web3 = new Web3(new Web3.providers.WebsocketProvider(web3Provider));
+    while(true) {
+        if(registryClosed && mpeClosed && rfaiClosed) {
+            registryClosed = false
+            mpeClosed = false
+            rfaiClosed = false
+            var web3Provider = require('./config.js').NETWORKS[parseInt(netId)]['ws_provider'];
+            console.log("main::netId:", netId, "|web3Provider:", web3Provider)
 
-    web3.eth.getBlockNumber().then(maxNetworkBlock => {
+            var web3 = new Web3(new Web3.providers.WebsocketProvider(web3Provider));
 
-        RegistryEventsRaw.max('block_no').then(maxSeenBlock => {
-            readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'Registry');
-        }).catch(err => {
-            console.error("Error in crawling Registry " + err);
-            close(web3, true, false, false);
-        });
-
-        MPEEventsRaw.max('block_no').then(maxSeenBlock => {
-            readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'MPE');
-        }).catch(err => {
-            console.error("Error in crawling MPE " + err);
-            close(web3, false, true, false);
-        });
-
-        RFAIEventsRaw.max('block_no').then(maxSeenBlock => {
-            readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'RFAI');
-        }).catch(err => {
-            console.error("Error in crawling RFAI " + err);
-            close(web3, false, false, true);
-        });
-
-    }).catch(err => {
-        console.error(err);
-        close(web3, true, true, true);
-    });
+            web3.eth.getBlockNumber().then(maxNetworkBlock => {
+                RegistryEventsRaw.max('block_no').then(maxSeenBlock => {
+                    readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'Registry');
+                }).catch(err => {
+                    err_msg = "error in crawling registry: " + err 
+                    report_slack(err_msg) 
+                    close(web3, true, false, false);
+                });
+                MPEEventsRaw.max('block_no').then(maxSeenBlock => {
+                    readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'MPE');
+                }).catch(err => {
+                    err_msg = "error in crawling MPE: " + err
+                    report_slack(err_msg) 
+                    close(web3, false, true, false);
+                });
+                RFAIEventsRaw.max('block_no').then(maxSeenBlock => {
+                    readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'RFAI');
+                }).catch(err => {
+                    err_msg = "error in crawling RFAI: " + err
+                    console.log(err_msg); 
+                    // report_slack(err_msg)
+                    close(web3, false, false, true);
+                });
+            }).catch(err => {
+                report_slack(err)
+                close(web3, true, true, true);
+            });
+        }else{
+            await sleep(5000);
+        }
+    }    
 }
 
 function isNaN(x) {
     x = Number(x);
     return x != x;
+}
+
+function report_slack(error){
+    console.log(error)
+    var postErr = JSON.stringify({ "channel": "#contract-index-alerts",
+                                   "username": "webhookbot", 
+                                   "text": error,
+                                   "icon_emoji": ":ghost:"
+                                });
+    var options = { hostname: 'hooks.slack.com',
+                    port: 443,
+                    path: '/services/T996H7VS8/BFF77DU6A/tnsnqohmdaoWRvRqSEH7MNhr',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                 };
+    var req = https.request(options, (res) => {
+        console.log('statusCode:', res.statusCode);     
+        res.on('data', (d) => {
+          process.stdout.write(d);
+        });
+    });      
+    req.on('error', (e) => {
+        console.error(e);
+    });    
+    req.write(postErr);
+    req.end();
+}
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
 
 function createSQLStatements(RawEvents, result) {
@@ -80,8 +118,7 @@ function createSQLStatements(RawEvents, result) {
                 transactionHash: item.transactionHash,
                 logIndex: item.logIndex
             }
-          }).then(c => 
-            {
+          }).then(c =>  {
                 if(c === 0) {
                     RawEvents.create({
                         'block_no': item.blockNumber,
@@ -91,14 +128,14 @@ function createSQLStatements(RawEvents, result) {
                         'json_str': JSON.stringify(item),
                         'row_created': sequelize.literal('CURRENT_TIMESTAMP')
                     })
-                    .catch((err) => {
-                        console.error('Error for block no. ', item.blockNumber, '|', err);
+                    .catch( err => {
+                        err_msg = 'Error for block no. ', item.blockNumber, '|', err
+                        report_slack(err_msg) 
                     })                            
-                }
-                else {
+                } else {
                     console.log('Block seen' + JSON.stringify(item))
                 }
-            })
+           })
     });
     return createPromises;
 }
@@ -129,13 +166,14 @@ function readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, contract) {
     
     maxSeenBlock = isNaN(maxSeenBlock) ? 7000000 : (maxSeenBlock);
     batchCompleted = false;
-    console.log("Crawling from " + maxSeenBlock + " to " + maxNetworkBlock)
+    console.log("crawling from " + maxSeenBlock + " to " + maxNetworkBlock)
     var evt = contractInstance.getPastEvents("allEvents", {
         fromBlock: maxSeenBlock,
         toBlock: maxNetworkBlock
     }, function (err, result) {
         if (err) {
-            console.log("error while watching for contract events: " + err);
+            err_msg = "error while watching for contract events: " + err 
+            report_slack(err_msg)    
         } else {
             var RawEvents = null;
 
@@ -149,14 +187,13 @@ function readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, contract) {
             
             let createPromises = createSQLStatements(RawEvents, result);
             Promise.all(createPromises).then(() => {
-                console.log("Completed crawling from " + maxSeenBlock + " to " + maxNetworkBlock);                    
+                console.log("Completed crawling from " + maxSeenBlock + " to " + maxNetworkBlock)          
                 close(web3, (contract == 'Registry'), (contract == 'MPE'), (contract == 'RFAI'));
             });                
         }
     }).catch(err => {
-        console.error(err);
+        report_slack(err) 
         close(web3, (contract == 'Registry'), (contract == 'MPE'), (contract == 'RFAI'));
-        batchFailed = true;
     });
 }
 
