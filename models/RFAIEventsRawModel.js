@@ -1,10 +1,10 @@
 /**
  * Create a Model with the Entities in the Database
- * RegistryEventsRaw Model 
+ * RFAIEventsRaw Model 
  */
 
 module.exports = (sequelize, DataTypes) => {
-    var RegistryEventsRawModel = sequelize.define('RegistryEventsRawModel', {
+    var RFAIEventsRawModel = sequelize.define('RFAIEventsRawModel', {
         row_id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -12,8 +12,6 @@ module.exports = (sequelize, DataTypes) => {
         },
         block_no: DataTypes.INTEGER,
         event: DataTypes.TEXT,
-        transactionHash: DataTypes.STRING,
-        logIndex: DataTypes.INTEGER,
         json_str: DataTypes.TEXT,
         processed: {
             type: DataTypes.TINYINT,
@@ -29,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     }, {
         freezeTableName: true,
         timestamps: false,
-        tableName: 'registry_events_raw'
+        tableName: 'rfai_events_raw'
     });
-    return RegistryEventsRawModel;
+    return RFAIEventsRawModel;
 }

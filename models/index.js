@@ -2,12 +2,15 @@ const Sequelize = require('sequelize');
 var config = require("../config.js");
 
 /* create a connection string from the config file */
-const sequelize = new Sequelize(config.databaseOptions.database, config.databaseOptions.username, config.databaseOptions.password, {
-  host: config.databaseOptions.host,
-  port: config.databaseOptions.port,
-  dialect: config.databaseOptions.dialect,
-  operatorsAliases: config.databaseOptions.operatorsAliases,
-  pool: config.databaseOptions.pool
+var netId = process.argv.slice(2)[0]
+const dbParams = config.DB[netId]
+const sequelize = new Sequelize(dbParams.database, dbParams.username, dbParams.password, {
+  host: dbParams.host,
+  port: dbParams.port,
+  dialect: dbParams.dialect,
+  operatorsAliases: dbParams.operatorsAliases,
+  pool: dbParams.pool,
+  logging: false
 });
 
 sequelize
@@ -21,26 +24,13 @@ sequelize
 
 /* load models */
 var models = [
-  'Organization',
-  'Service',
-  'ServiceTags',
-  'Channel',
-  'ServiceEndpoint',
-  'ServiceGroup',
-  'ServiceMetaData',
   'RegistryEventsRaw',
-  'MPEEventsRaw'
+  'MPEEventsRaw',
+  'RFAIEventsRaw'
 ];
 
 models.forEach(function (model) {
   module.exports[model] = sequelize.import(__dirname + '/' + model + 'Model');
 });
-
-/* describe relationships */
-(function (m) {
-  m.Service.hasMany(m.ServiceTags, {
-    allowNull: false
-  });
-})(module.exports);
 
 module.exports.sequelize = sequelize;

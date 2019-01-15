@@ -1,23 +1,51 @@
-var databaseOptions = {
-    database: '',
-    username: '',
-    password: '',
-    host: '',
-    port: 3306,
-    dialect: 'mysql',
-    operatorsAliases: false,
-    pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-    }
+const DB = {
+    1: {
+        database: '',
+        username: '',
+        password: '',
+        host: '',
+        port: 3306,
+        dialect: 'mysql',
+        operatorsAliases: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
+    },
+    42: {
+        database: '',
+        username: '',
+        password: '',
+        host: '',
+        port: 3306,
+        dialect: 'mysql',
+        operatorsAliases: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
+    },
+    3: {
+        database: '',
+        username: '',
+        password: '',
+        host: '',
+        port: 3306,
+        dialect: 'mysql',
+        operatorsAliases: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
+    }        
 };
-const IPFS_URL = {
-    'url': 'ipfs.singularitynet.io',
-    'port': '80',
-    'protocol': 'http'
-};
+
 const NETWORKS = {
     1: {
         name: "mainnet",
@@ -34,7 +62,6 @@ const NETWORKS = {
 };
 
 module.exports = {
-    databaseOptions: databaseOptions,
-    IPFS_URL: IPFS_URL,
+    DB: DB,
     NETWORKS: NETWORKS
 };
