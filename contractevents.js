@@ -7,7 +7,8 @@ var sequelize = require('./models/index.js').sequelize,
     RFAIEventsRaw = require('./models/index.js').RFAIEventsRaw,
     mpeClosed = true,
     registryClosed = true;
-    rfaiClosed = true;
+    rfaiClosed = true
+    SLACK_HOOK = require('./config.js').SLACK_HOOK;
 
 function close(web3, isRegistry, isMPE, isRFAI){
     if (isRegistry) {
@@ -29,6 +30,7 @@ function close(web3, isRegistry, isMPE, isRFAI){
 }
 
 async function main() {
+    report_slack("start of the snet-contract-event-consumer")
     var netId = process.argv.slice(2)[0]
     while(true) {
         if(registryClosed && mpeClosed && rfaiClosed) {
@@ -85,14 +87,7 @@ function report_slack(error){
                                    "text": error,
                                    "icon_emoji": ":ghost:"
                                 });
-    var options = { hostname: 'hooks.slack.com',
-                    port: 443,
-                    path: '/services/T996H7VS8/BFF77DU6A/tnsnqohmdaoWRvRqSEH7MNhr',
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                 };
+    var options = SLACK_HOOK;
     var req = https.request(options, (res) => {
         console.log('statusCode:', res.statusCode);     
         res.on('data', (d) => {
