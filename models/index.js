@@ -3,7 +3,7 @@ var config = require("../config.js");
 
 /* create a connection string from the config file */
 var netId = process.argv.slice(2)[0]
-const dbParams = config.DB[netId]
+const dbParams = config.DB[parseInt(netId)]
 const sequelize = new Sequelize(dbParams.database, dbParams.username, dbParams.password, {
   host: dbParams.host,
   port: dbParams.port,
@@ -16,10 +16,10 @@ const sequelize = new Sequelize(dbParams.database, dbParams.username, dbParams.p
 sequelize
   .authenticate()
   .then(() => {
-    console.log('Database connection has been established successfully.');
+    console.log('database connection has been established successfully.');
   })
   .catch(err => {
-    console.error('Unable to connect to the database:', err);
+    console.error('unable to connect to the database: ', err);
   });
 
 /* load models */

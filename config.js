@@ -45,19 +45,18 @@ const DB = {
         }
     }        
 };
-
 const NETWORKS = {
     1: {
         name: "mainnet",
-        infura_ws: 'wss://mainnet.infura.io/ws',
+        ws_provider: 'wss://mainnet.infura.io/ws',
     },
     3: {
-        name: "Ropsten",
-        infura_ws: 'wss://ropsten.infura.io/ws',
+        name: "ropsten",
+        ws_provider: 'wss://ropsten.infura.io/ws',
     },
     42: {
-        name: "Kovan",
-        infura_ws: 'wss://kovan.infura.io/ws',
+        name: "kovan",
+        ws_provider: 'wss://kovan.infura.io/ws',
     }
 };
 
