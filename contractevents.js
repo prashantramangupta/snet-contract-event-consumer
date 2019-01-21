@@ -7,7 +7,8 @@ var sequelize = require('./models/index.js').sequelize,
     RFAIEventsRaw = require('./models/index.js').RFAIEventsRaw,
     mpeClosed = true,
     registryClosed = true;
-    rfaiClosed = true;
+    rfaiClosed = true
+    SLACK_HOOK = require('./config.js').SLACK_HOOK;
 
 function close(web3, isRegistry, isMPE, isRFAI){
     if (isRegistry) {
@@ -29,6 +30,7 @@ function close(web3, isRegistry, isMPE, isRFAI){
 }
 
 async function main() {
+    report_slack("info:: start of the snet-contract-event-consumer")
     var netId = process.argv.slice(2)[0]
     while(true) {
         if(registryClosed && mpeClosed && rfaiClosed) {
@@ -44,21 +46,21 @@ async function main() {
                 RegistryEventsRaw.max('block_no').then(maxSeenBlock => {
                     readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'Registry');
                 }).catch(err => {
-                    err_msg = "error in crawling registry: " + err 
+                    err_msg = "err:: error in crawling registry: " + err 
                     report_slack(err_msg) 
                     close(web3, true, false, false);
                 });
                 MPEEventsRaw.max('block_no').then(maxSeenBlock => {
                     readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'MPE');
                 }).catch(err => {
-                    err_msg = "error in crawling MPE: " + err
+                    err_msg = "err:: error in crawling MPE: " + err
                     report_slack(err_msg) 
                     close(web3, false, true, false);
                 });
                 RFAIEventsRaw.max('block_no').then(maxSeenBlock => {
                     readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, 'RFAI');
                 }).catch(err => {
-                    err_msg = "error in crawling RFAI: " + err
+                    err_msg = "err:: error in crawling RFAI: " + err
                     console.log(err_msg); 
                     // report_slack(err_msg)
                     close(web3, false, false, true);
@@ -85,14 +87,7 @@ function report_slack(error){
                                    "text": error,
                                    "icon_emoji": ":ghost:"
                                 });
-    var options = { hostname: 'hooks.slack.com',
-                    port: 443,
-                    path: '/services/T996H7VS8/BFF77DU6A/tnsnqohmdaoWRvRqSEH7MNhr',
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                 };
+    var options = SLACK_HOOK;
     var req = https.request(options, (res) => {
         console.log('statusCode:', res.statusCode);     
         res.on('data', (d) => {
@@ -129,7 +124,7 @@ function createSQLStatements(RawEvents, result) {
                         'row_created': sequelize.literal('CURRENT_TIMESTAMP')
                     })
                     .catch( err => {
-                        err_msg = 'Error for block no. ', item.blockNumber, '|', err
+                        err_msg = 'err:: Error for block no. ', item.blockNumber, '|', err
                         report_slack(err_msg) 
                     })                            
                 } else {
@@ -172,7 +167,7 @@ function readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, contract) {
         toBlock: maxNetworkBlock
     }, function (err, result) {
         if (err) {
-            err_msg = "error while watching for contract events: " + err 
+            err_msg = "err:: error while watching for contract events: " + err 
             report_slack(err_msg)    
         } else {
             var RawEvents = null;
@@ -192,7 +187,7 @@ function readEvents(web3, netId, maxSeenBlock, maxNetworkBlock, contract) {
             });                
         }
     }).catch(err => {
-        report_slack(err) 
+        report_slack("err:: " + err) 
         close(web3, (contract == 'Registry'), (contract == 'MPE'), (contract == 'RFAI'));
     });
 }
